@@ -2,6 +2,7 @@ package cam72cam.immersiverailroading.multiblock;
 
 import cam72cam.immersiverailroading.Config;
 import cam72cam.immersiverailroading.library.CraftingMachineMode;
+import cam72cam.immersiverailroading.library.Gauge;
 import cam72cam.immersiverailroading.library.GuiTypes;
 import cam72cam.immersiverailroading.tile.TileMultiblock;
 import cam72cam.immersiverailroading.util.ItemCastingCost;
@@ -29,7 +30,7 @@ public class CastingMultiblock extends Multiblock {
 	private static final Vec3i render = new Vec3i(3,3,7);
 	private static final Vec3i fluid = new Vec3i(3,3,3);
 	private static final Vec3i craft = new Vec3i(3,2,3);
-	private static final Vec3i output = new Vec3i(3,2,14);
+	private static final Vec3i output = new Vec3i(1,0,14);
 	private static final Vec3i power = new Vec3i(3,7,0);
 	public static final double max_volume = 5 * 4 * 4.5 * 9;
 
@@ -99,6 +100,10 @@ public class CastingMultiblock extends Multiblock {
 	public CastingMultiblock() {
 		super(NAME, cast_blueprint());
 	}
+
+	public CastingMultiblock(String name, FuzzyProvider[][][] components) {
+		super(name, components);
+	}
 	
 	@Override
 	public Vec3i placementPos() {
@@ -110,9 +115,14 @@ public class CastingMultiblock extends Multiblock {
 		return new CastingInstance(world, origin, rot);
 	}
 	public class CastingInstance extends MultiblockInstance {
+
+		public Gauge maxGauge;
+		public double maxVolume;
 		
 		public CastingInstance(World world, Vec3i origin, Rotation rot) {
 			super(world, origin, rot);
+			maxGauge = Gauge.from(Double.POSITIVE_INFINITY);
+			maxVolume = max_volume;
 		}
 
 		@Override
@@ -279,9 +289,7 @@ public class CastingMultiblock extends Multiblock {
 		}
 
 		@Override
-		public boolean isOutputSlot(Vec3i offset, int slot) {
-			return false;
-		}
+		public boolean isOutputSlot(Vec3i offset, int slot) { return offset.equals(output); }
 
 		@Override
 		public int getSlotLimit(Vec3i offset, int slot) {

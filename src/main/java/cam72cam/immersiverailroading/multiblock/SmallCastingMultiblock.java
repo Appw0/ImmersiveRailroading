@@ -1,0 +1,324 @@
+package cam72cam.immersiverailroading.multiblock;
+
+import cam72cam.immersiverailroading.Config.ConfigBalance;
+import cam72cam.immersiverailroading.library.CraftingMachineMode;
+import cam72cam.immersiverailroading.library.Gauge;
+import cam72cam.immersiverailroading.library.GuiTypes;
+import cam72cam.immersiverailroading.tile.TileMultiblock;
+import cam72cam.immersiverailroading.util.ItemCastingCost;
+import cam72cam.mod.energy.IEnergy;
+import cam72cam.mod.entity.Entity;
+import cam72cam.mod.entity.Player;
+import cam72cam.mod.entity.boundingbox.IBoundingBox;
+import cam72cam.mod.item.Fuzzy;
+import cam72cam.mod.item.ItemStack;
+import cam72cam.mod.math.Rotation;
+import cam72cam.mod.math.Vec3d;
+import cam72cam.mod.math.Vec3i;
+import cam72cam.mod.sound.Audio;
+import cam72cam.mod.sound.SoundCategory;
+import cam72cam.mod.sound.StandardSound;
+import cam72cam.mod.world.World;
+
+import java.util.List;
+
+public class SmallCastingMultiblock extends CastingMultiblock {
+    private static FuzzyProvider STONE = () -> Fuzzy.STONE_BRICK;
+    private static FuzzyProvider SAND = () -> Fuzzy.SAND;
+    public static final String NAME = "SMALL_CASTING";
+    private static final Vec3i render = new Vec3i(2,0,4);
+    private static final Vec3i fluid = new Vec3i(2,0,2);
+    private static final Vec3i craft = new Vec3i(2,0,1);
+    private static final Vec3i output = new Vec3i(2,0,11);
+    private static final Vec3i power = new Vec3i(0,0,2);
+    public static final double max_volume = 3 * 3 * 9;
+    public static final Gauge max_gauge = Gauge.from(ConfigBalance.SmallCastingMaxGauge);
+
+
+    public SmallCastingMultiblock() { // Z - Y - Z
+        super(NAME, new FuzzyProvider[][][] {
+                {
+                        {AIR, H_ENG(), H_ENG(), H_ENG(), AIR},
+                        {AIR, CASING(), CASING(), CASING(), AIR}
+                },
+                {
+                        {S_SCAF(), CASING(), CASING(), CASING(), S_SCAF()},
+                        {CASING(), AIR, AIR, AIR, CASING()}
+                },
+                {
+                        {S_SCAF(), CASING(), CASING(), CASING(), S_SCAF()},
+                        {CASING(), AIR, AIR, AIR, CASING()}
+                },
+                {
+                        {S_SCAF(), CASING(), CASING(), CASING(), S_SCAF()},
+                        {CASING(), AIR, AIR, AIR, CASING()}
+                },
+                {
+                        {AIR, S_SCAF(), S_SCAF(), S_SCAF(), AIR},
+                        {AIR, CASING(), CASING(), CASING(), AIR}
+                },
+                {
+                        {STONE, STONE, STONE, STONE, STONE},
+                        {AIR, AIR, STEEL(), AIR, AIR}
+                },
+                {
+                        {STONE, SAND, SAND, SAND, STONE}
+                },
+                {
+                        {STONE, SAND, SAND, SAND, STONE}
+                },
+                {
+                        {STONE, SAND, SAND, SAND, STONE}
+                },
+                {
+                        {STONE, SAND, SAND, SAND, STONE}
+                },
+                {
+                        {STONE, SAND, SAND, SAND, STONE}
+                },
+                {
+                        {STONE, STONE, STONE, STONE, STONE}
+                }
+        });
+    }
+
+    @Override
+    public Vec3i placementPos() {
+        return new Vec3i(2, 0, 0);
+    }
+
+    @Override
+    protected MultiblockInstance newInstance(World world, Vec3i origin, Rotation rot) {
+        return new SmallCastingInstance(world, origin, rot);
+    }
+
+    public class SmallCastingInstance extends CastingInstance {
+
+
+        public SmallCastingInstance(World world, Vec3i origin, Rotation rot) {
+            super(world, origin, rot);
+            maxGauge = max_gauge;
+            maxVolume = max_volume;
+        }
+
+        @Override
+        public boolean onBlockActivated(Player player, Player.Hand hand, Vec3i offset) {
+            TileMultiblock outTe = getTile(output);
+            if (outTe == null) {
+                return false;
+            }
+            TileMultiblock craftTe = getTile(craft);
+            if (craftTe == null) {
+                return false;
+            }
+            if (!outTe.getContainer().get(0).isEmpty()) {
+                if (world.isServer) {
+                    world.dropItem(outTe.getContainer().get(0), player.getPosition());
+                    outTe.getContainer().set(0, ItemStack.EMPTY);
+                }
+            } else {
+                if (world.isClient) {
+                    Vec3i pos = getPos(craft);
+                    GuiTypes.CASTING.open(player, pos);
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public boolean isRender(Vec3i offset) {
+            return render.equals(offset);
+        }
+
+        @Override
+        public int getInvSize(Vec3i offset) {
+            return output.equals(offset) ? 1 : 0;
+        }
+
+        @Override
+        public void tick(Vec3i offset) {
+
+            TileMultiblock powerTe = getTile(power);
+
+            if (powerTe == null) {
+                return;
+            }
+
+            IEnergy energy = powerTe.getEnergy(null);
+
+            if (world.isClient) {
+                if (offset.z > 5 && offset.y == 0 && isPouring()) {
+                    Vec3d pos = new Vec3d(getPos(offset)).add(0, 1, 0).add(0.5, 0.5, 0.5);
+                    if (Math.random() < 0.01) {
+                        world.createParticle(World.ParticleType.SMOKE, pos, Vec3d.ZERO);
+                        world.createParticle(World.ParticleType.SMOKE, pos, Vec3d.ZERO);
+                    }
+                    if (Math.random() < 0.001) {
+                        Audio.playSound(world, pos, StandardSound.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 1, 0.25f);
+                    }
+                }
+
+                return;
+            }
+
+            if (offset.equals(fluid)) {
+                TileMultiblock fluidTe = getTile(fluid);
+                if (fluidTe == null) {
+                    return;
+                }
+
+                IBoundingBox meltBounds = IBoundingBox.from(getPos(offset.add(0, 0, 0))).grow(new Vec3d(1, 1, 1));
+                IBoundingBox damageBounds = meltBounds.expand(new Vec3d(0, 0, 0));
+                List<ItemStack> dropped = world.getDroppedItems(meltBounds);
+                for (ItemStack stack : dropped) {
+                    ItemStack craftStack = stack.copy();
+                    int cost = ItemCastingCost.getCastCost(craftStack);
+                    if (cost != ItemCastingCost.BAD_CAST_COST) {
+                        cost /= craftStack.getCount();
+
+                        while (stack.getCount() != 0 && fluidTe.getCraftProgress() < max_volume + cost) {
+                            if (!hasPower()) {
+                                break;
+                            }
+                            energy.extract(powerRequired(), false);
+                            stack.shrink(1);
+                            fluidTe.setCraftProgress(fluidTe.getCraftProgress() + cost);
+                        }
+                    } else {
+                        if (fluidTe.getCraftProgress() > 0) {
+                            stack.setCount(0);
+                        }
+                    }
+                }
+                List<Entity> living = world.getEntities(ent -> (ent.isPlayer() || ent.isLiving()) && ent.getBounds().intersects(damageBounds), Entity.class);
+                for (Entity alive : living) {
+                    alive.directDamage("immersiverailroading:casting", 5);
+                }
+            }
+
+            if (offset.equals(craft)) {
+                if (!hasPower()) {
+                    return;
+                }
+
+                TileMultiblock fluidTe = getTile(fluid);
+                if (fluidTe == null) {
+                    return;
+                }
+                TileMultiblock craftTe = getTile(craft);
+                if (craftTe == null) {
+                    return;
+                }
+                TileMultiblock outTe = getTile(output);
+                if (outTe == null) {
+                    return;
+                }
+
+                ItemStack item = craftTe.getCraftItem();
+                if (item == null || item.isEmpty()) {
+                    return;
+                }
+
+                CraftingMachineMode mode = craftTe.getCraftMode();
+                if (mode == CraftingMachineMode.STOPPED) {
+                    return;
+                }
+
+                if (! outTe.getContainer().get(0).isEmpty()) {
+                    return;
+                }
+
+                int cost = ItemCastingCost.getCastCost(item);
+                if (cost == ItemCastingCost.BAD_CAST_COST) {
+                    return;
+                }
+
+                if (craftTe.getCraftProgress() >= cost) {
+                    craftTe.setCraftProgress(0);
+                    if (mode == CraftingMachineMode.SINGLE) {
+                        craftTe.setCraftMode(CraftingMachineMode.STOPPED);
+                    }
+                    ItemStack outputItem = item.copy();
+                    if (outputItem.getTagCompound().isEmpty()) {
+                        outputItem.clearTagCompound();
+                    }
+                    outTe.getContainer().set(0, outputItem);
+                } else {
+                    if (craftTe.getRenderTicks() % 10 == 0) {
+                        if (fluidTe.getCraftProgress() > 0) {
+                            // Drain
+                            fluidTe.setCraftProgress(fluidTe.getCraftProgress() - 1);
+                            craftTe.setCraftProgress(craftTe.getCraftProgress() + 1);
+                        }
+                    }
+                }
+            }
+
+            if (offset.equals(power)) {
+                energy.extract(powerRequired(), false);
+            }
+        }
+
+        @Override
+        public boolean canInsertItem(Vec3i offset, int slot, ItemStack stack) {
+            return false;
+        }
+
+        @Override
+        public boolean isOutputSlot(Vec3i offset, int slot) { return offset.equals(output); }
+
+        @Override
+        public int getSlotLimit(Vec3i offset, int slot) {
+            return output.equals(offset) ? 1 : 0;
+        }
+
+        @Override
+        public boolean canRecievePower(Vec3i offset) {
+            return offset.equals(power);
+        }
+
+        @Override
+        public boolean hasPower() {
+            TileMultiblock powerTe = getTile(power);
+            if (powerTe == null) {
+                return false;
+            }
+            return powerTe.getEnergy(null).getCurrent() >= powerRequired();
+        }
+
+        @Override
+        public boolean isPouring() {
+            TileMultiblock craftTe = getTile(craft);
+            if (craftTe == null) {
+                return false;
+            }
+            TileMultiblock fluidTe = getTile(fluid);
+            if (fluidTe == null) {
+                return false;
+            }
+            return craftTe.getCraftProgress() > 0 && fluidTe.getCraftProgress() > 0;
+        }
+
+        @Override
+        public double getSteelLevel() {
+            TileMultiblock fluidTe = getTile(fluid);
+            if (fluidTe == null) {
+                return 0;
+            }
+            return fluidTe.getCraftProgress() / max_volume;
+        }
+
+        @Override
+        public ItemStack getCraftItem() {
+            TileMultiblock craftingTe = getTile(craft);
+            if (craftingTe == null) {
+                return ItemStack.EMPTY;
+            }
+            return craftingTe.getCraftItem();
+        }
+
+        private int powerRequired() {
+            return (int) Math.ceil(32 * ConfigBalance.machinePowerFactor);
+        }
+    }
+}

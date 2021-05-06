@@ -1,11 +1,14 @@
 package cam72cam.immersiverailroading.gui;
 
+import cam72cam.immersiverailroading.Config;
 import cam72cam.immersiverailroading.IRItems;
 import cam72cam.immersiverailroading.items.ItemRollingStock;
 import cam72cam.immersiverailroading.items.ItemRollingStockComponent;
 import cam72cam.immersiverailroading.items.ItemTabs;
 import cam72cam.immersiverailroading.library.CraftingType;
+import cam72cam.immersiverailroading.library.Gauge;
 import cam72cam.immersiverailroading.library.ItemComponentType;
+import cam72cam.immersiverailroading.registry.EntityRollingStockDefinition;
 import cam72cam.immersiverailroading.util.IRFuzzy;
 import cam72cam.mod.gui.screen.IScreenBuilder;
 import cam72cam.mod.gui.helpers.ItemPickerGUI;
@@ -22,11 +25,15 @@ public class CraftPicker {
 	private List<ItemStack> items;
 	private Consumer<ItemStack> onChoose;
 
+	public static void showCraftPicker(IScreenBuilder screen, ItemStack current, CraftingType craftType, Gauge maxGauge, Consumer<ItemStack> onChoose) {
+		new CraftPicker(screen, current, craftType, maxGauge, onChoose);
+	}
+
 	public static void showCraftPicker(IScreenBuilder screen, ItemStack current, CraftingType craftType, Consumer<ItemStack> onChoose) {
-		new CraftPicker(screen, current, craftType, onChoose);
+		new CraftPicker(screen, current, craftType, Gauge.from(Double.POSITIVE_INFINITY), onChoose);
 	}
 	
-	private CraftPicker(IScreenBuilder screen, ItemStack current, CraftingType craftType, Consumer<ItemStack> onChoose) {
+	private CraftPicker(IScreenBuilder screen, ItemStack current, CraftingType craftType, Gauge maxGauge, Consumer<ItemStack> onChoose) {
 		this.onChoose = stack -> {
 			screen.show();
 			onChoose.accept(stack);
@@ -65,7 +72,8 @@ public class CraftPicker {
 					break;
 				}
 			}
-			if (!hasComponent) {
+			EntityRollingStockDefinition def = new ItemRollingStockComponent.Data(itemStock).def;
+			if (!hasComponent) {  // || (Config.ConfigBalance.DesignGaugeLock && def.recommended_gauge.value() > maxGauge.value())
 				toRemove.add(itemStock);
 				continue;
 			}

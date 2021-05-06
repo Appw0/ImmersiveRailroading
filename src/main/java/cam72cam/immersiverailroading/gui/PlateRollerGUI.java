@@ -8,6 +8,7 @@ import cam72cam.immersiverailroading.library.CraftingType;
 import cam72cam.immersiverailroading.library.Gauge;
 import cam72cam.immersiverailroading.library.GuiText;
 import cam72cam.immersiverailroading.library.PlateType;
+import cam72cam.immersiverailroading.multiblock.PlateRollerMultiblock.PlateRollerInstance;
 import cam72cam.immersiverailroading.registry.EntityRollingStockDefinition;
 import cam72cam.immersiverailroading.tile.TileMultiblock;
 import cam72cam.mod.entity.Player;
@@ -16,6 +17,7 @@ import cam72cam.mod.gui.screen.IScreen;
 import cam72cam.mod.gui.screen.IScreenBuilder;
 import cam72cam.mod.item.ItemStack;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -24,6 +26,7 @@ import static cam72cam.immersiverailroading.gui.ClickListHelper.next;
 public class PlateRollerGUI implements IScreen {
 	private Button gaugeButton;
 	private Gauge gauge;
+	private Gauge maxGauge;
 	
 	private Button plateButton;
 	private PlateType plate;
@@ -36,12 +39,16 @@ public class PlateRollerGUI implements IScreen {
 	public PlateRollerGUI(TileMultiblock te) {
 		this.tile = te;
 		currentItem = te.getCraftItem();
+		maxGauge = ((PlateRollerInstance) te.getMultiblock()).maxGauge;
 		if (currentItem == null || currentItem.isEmpty()) {
 			currentItem = new ItemStack(IRItems.ITEM_PLATE, 1);
 		}
 
 		ItemPlate.Data data = new ItemPlate.Data(currentItem);
 		gauge = data.gauge;
+		if (gauge.value() > maxGauge.value()) {
+			gauge = maxGauge;
+		}
 		plate = data.type;
 	}
 	
@@ -59,11 +66,25 @@ public class PlateRollerGUI implements IScreen {
 			public void onClick(Player.Hand hand) {
 				if(!currentItem.isEmpty()) {
 					EntityRollingStockDefinition def = new ItemPlate.Data(currentItem).def;
+					ArrayList<Gauge> validGauges = new ArrayList<>();
 					if (def != null && plate == PlateType.BOILER && ConfigBalance.DesignGaugeLock) {
-						List<Gauge> validGauges = Collections.singletonList(Gauge.from(def.recommended_gauge.value()));
+						for (Gauge ga : Gauge.values()) {
+							if (ga.value() <= maxGauge.value()) {
+								if (ga.isModel()) {
+									validGauges.add(ga);
+								} else if (ga == def.recommended_gauge) {
+									validGauges.add(ga);
+								}
+							}
+						}
 						gauge = next(validGauges, gauge, hand);
 					} else {
-						gauge = next(Gauge.values(), gauge, hand);
+						for (Gauge ga : Gauge.values()) {
+							if (ga.value() <= maxGauge.value()) {
+								validGauges.add(ga);
+							}
+						}
+						gauge = next(validGauges, gauge, hand);
 					}
 				}
 				gaugeButton.setText(GuiText.SELECTOR_GAUGE.toString(gauge));
@@ -92,6 +113,14 @@ public class PlateRollerGUI implements IScreen {
 						EntityRollingStockDefinition def = rs.def;
 						if (def != null && !gauge.isModel() && gauge.value() != def.recommended_gauge.value()) {
 							gauge = def.recommended_gauge;
+							if (gauge.value() > maxGauge.value() && ConfigBalance.DesignGaugeLock) {
+								for (Gauge ga : Gauge.values()) {
+									if (ga.isModel()) {
+										gauge = ga;
+										break;
+									}
+								}
+							}
 							gaugeButton.setText(GuiText.SELECTOR_GAUGE.toString(gauge));
 						}
 						data.write();

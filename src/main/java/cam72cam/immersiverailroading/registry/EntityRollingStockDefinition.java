@@ -76,6 +76,7 @@ public abstract class EntityRollingStockDefinition {
     private double passengerCompartmentLength;
     private double passengerCompartmentWidth;
     private int weight;
+    private int braking;
     private int maxPassengers;
     private final Map<ModelComponentType, List<ModelComponent>> renderComponents;
     private final List<ItemComponentType> itemComponents;
@@ -230,6 +231,12 @@ public abstract class EntityRollingStockDefinition {
         }
 
         weight = (int) Math.ceil(data.get("properties").getAsJsonObject().get("weight_kg").getAsInt() * internal_inv_scale);
+
+        if (data.get("properties").getAsJsonObject().has("braking_force_lbf")) {
+            braking = (int) Math.ceil(data.get("properties").getAsJsonObject().get("braking_force_lbf").getAsInt() * internal_inv_scale * 0.4536); // 0.45.. converts to kg!
+        } else {
+            braking = weight;
+        }
 
         wheel_sound = default_wheel_sound;
         clackFront = default_clackFront;
@@ -488,6 +495,8 @@ public abstract class EntityRollingStockDefinition {
     public int getWeight(Gauge gauge) {
         return (int) Math.ceil(gauge.scale() * this.weight);
     }
+
+    public int getBrakingForceNewtons(Gauge gauge) { return (int) Math.ceil(gauge.scale() * this.braking * 4.44822f); }
 
     public double getHeight(Gauge gauge) {
         return gauge.scale() * this.heightBounds;

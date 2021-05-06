@@ -1,13 +1,13 @@
 package cam72cam.immersiverailroading.multiblock;
 
 import cam72cam.immersiverailroading.Config;
+import cam72cam.immersiverailroading.Config.ConfigBalance;
 import cam72cam.immersiverailroading.library.Gauge;
 import cam72cam.immersiverailroading.library.GuiTypes;
 import cam72cam.immersiverailroading.tile.TileMultiblock;
 import cam72cam.immersiverailroading.util.IRFuzzy;
 import cam72cam.mod.energy.IEnergy;
 import cam72cam.mod.entity.Player;
-import cam72cam.mod.item.Fuzzy;
 import cam72cam.mod.item.ItemStack;
 import cam72cam.mod.math.Rotation;
 import cam72cam.mod.math.Vec3i;
@@ -16,51 +16,46 @@ import cam72cam.mod.sound.SoundCategory;
 import cam72cam.mod.sound.StandardSound;
 import cam72cam.mod.world.World;
 
-public class PlateRollerMultiblock extends Multiblock {
-	public static final String NAME = "PLATE_MACHINE";
-	private static final Vec3i render = new Vec3i(2,0,0);
-	private static final Vec3i crafter = new Vec3i(2,0,14);
-	private static final Vec3i input = new Vec3i(2,0,0);
-	private static final Vec3i output = new Vec3i(2,0,29);
-	private static final Vec3i power = new Vec3i(1,4,14);
-	
-	private static FuzzyProvider[][][] componentGenerator() {
-		FuzzyProvider[][][] result = new FuzzyProvider[30][][];
-		
-		FuzzyProvider[] bed = new FuzzyProvider[] {
-				L_ENG(), S_SCAF(), S_SCAF(), S_SCAF(), L_ENG()
-		};
-		FuzzyProvider[] mid = new FuzzyProvider[] {
-				L_ENG(), AIR, AIR, AIR, L_ENG()
-		};
-		FuzzyProvider[] top = new FuzzyProvider[] {
-				H_ENG(), H_ENG(), H_ENG(), H_ENG(), H_ENG()
-		};
-		for (int i = 0; i < 30; i ++) {
-			if (i >= 11 && i <= 18) {
-				if (i >= 13 && i <=16) {
-					if (i == 14) {
-						result[i] = new FuzzyProvider[][] { bed, mid, top, { AIR, L_ENG(), L_ENG(), L_ENG(), AIR}, { AIR, H_ENG(), AIR, AIR, AIR } };
-					} else {
-						result[i] = new FuzzyProvider[][] { bed, mid, top, { AIR, L_ENG(), L_ENG(), L_ENG(), AIR} };
-					}
-				} else {
-					result[i] = new FuzzyProvider[][] { bed, mid, top };
+public class SmallPlateRollerMultiblock extends PlateRollerMultiblock {
+	public static final String NAME = "SMALL_PLATE_MACHINE";
+	private static final Vec3i render = new Vec3i(0,0,3);
+	private static final Vec3i crafter = new Vec3i(0,1,3);
+	private static final Vec3i input = new Vec3i(0,0,0);
+	private static final Vec3i output = new Vec3i(0,0,6);
+	private static final Vec3i power = new Vec3i(1,2,3);
+	public static final Gauge max_gauge = Gauge.from(ConfigBalance.SmallRailRollerMaxGauge);
+
+
+	public SmallPlateRollerMultiblock() {
+		super(NAME, new FuzzyProvider[][][] {
+				{
+						{S_SCAF(), S_SCAF()}
+				},
+				{
+						{S_SCAF(), S_SCAF()}
+				},
+				{
+						{L_ENG(), L_ENG()},
+						{H_ENG(), H_ENG()},
+						{L_ENG(), L_ENG()}
+				},
+				{
+						{L_ENG(), L_ENG()},
+						{H_ENG(), H_ENG()},
+						{L_ENG(), L_ENG()}
+				},
+				{
+						{L_ENG(), L_ENG()},
+						{H_ENG(), H_ENG()},
+						{L_ENG(), L_ENG()}
+				},
+				{
+						{S_SCAF(), S_SCAF()}
+				},
+				{
+						{S_SCAF(), S_SCAF()}
 				}
-			} else {
-				result[i] = new FuzzyProvider[][] { bed };
-			}
-		}
-		
-		return result;
-	}
-
-	public PlateRollerMultiblock() {
-		super(NAME, componentGenerator());
-	}
-
-	public PlateRollerMultiblock(String name, FuzzyProvider[][][] components) {
-		super(name, components);
+		});
 	}
 	
 	@Override
@@ -70,15 +65,13 @@ public class PlateRollerMultiblock extends Multiblock {
 
 	@Override
 	protected MultiblockInstance newInstance(World world, Vec3i origin, Rotation rot) {
-		return new PlateRollerInstance(world, origin, rot);
+		return new SmallPlateRollerInstance(world, origin, rot);
 	}
-	public class PlateRollerInstance extends MultiblockInstance {
-
-		public Gauge maxGauge;
-
-		public PlateRollerInstance(World world, Vec3i origin, Rotation rot) {
+	public class SmallPlateRollerInstance extends PlateRollerInstance {
+		
+		public SmallPlateRollerInstance(World world, Vec3i origin, Rotation rot) {
 			super(world, origin, rot);
-			maxGauge = Gauge.from(Double.POSITIVE_INFINITY);
+			maxGauge = max_gauge;
 		}
 
 		@Override
@@ -115,7 +108,7 @@ public class PlateRollerMultiblock extends Multiblock {
 					}
 					return true;
 				}
-				
+
 				if (world.isClient) {
 					Vec3i pos = getPos(crafter);
 					GuiTypes.PLATE_ROLLER.open(player, pos);

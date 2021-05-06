@@ -19,6 +19,10 @@ public class TileMultiblockRender {
 		renderers.put(RailRollerMultiblock.NAME, new RailRollerRender());
 		renderers.put(BoilerRollerMultiblock.NAME, new BoilerRollerRender());
 		renderers.put(CastingMultiblock.NAME, new CastingRender());
+
+		renderers.put(SmallCastingMultiblock.NAME, new SmallCastingRender());
+		renderers.put(SmallRailRollerMultiblock.NAME, new SmallRailRollerRender());
+		renderers.put(SmallPlateRollerMultiblock.NAME, new SmallPlateRollerRender());
 	}
 
 	public static StandardModel render(TileMultiblock te) {

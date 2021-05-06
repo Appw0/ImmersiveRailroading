@@ -1,13 +1,14 @@
 package cam72cam.immersiverailroading.multiblock;
 
 import cam72cam.immersiverailroading.Config;
+import cam72cam.immersiverailroading.Config.ConfigBalance;
+import cam72cam.immersiverailroading.IRItems;
+import cam72cam.immersiverailroading.items.ItemCastRail;
+import cam72cam.immersiverailroading.items.ItemRail;
 import cam72cam.immersiverailroading.library.Gauge;
-import cam72cam.immersiverailroading.library.GuiTypes;
 import cam72cam.immersiverailroading.tile.TileMultiblock;
-import cam72cam.immersiverailroading.util.IRFuzzy;
 import cam72cam.mod.energy.IEnergy;
 import cam72cam.mod.entity.Player;
-import cam72cam.mod.item.Fuzzy;
 import cam72cam.mod.item.ItemStack;
 import cam72cam.mod.math.Rotation;
 import cam72cam.mod.math.Vec3i;
@@ -16,111 +17,103 @@ import cam72cam.mod.sound.SoundCategory;
 import cam72cam.mod.sound.StandardSound;
 import cam72cam.mod.world.World;
 
-public class PlateRollerMultiblock extends Multiblock {
-	public static final String NAME = "PLATE_MACHINE";
-	private static final Vec3i render = new Vec3i(2,0,0);
-	private static final Vec3i crafter = new Vec3i(2,0,14);
-	private static final Vec3i input = new Vec3i(2,0,0);
-	private static final Vec3i output = new Vec3i(2,0,29);
-	private static final Vec3i power = new Vec3i(1,4,14);
-	
-	private static FuzzyProvider[][][] componentGenerator() {
-		FuzzyProvider[][][] result = new FuzzyProvider[30][][];
-		
-		FuzzyProvider[] bed = new FuzzyProvider[] {
-				L_ENG(), S_SCAF(), S_SCAF(), S_SCAF(), L_ENG()
-		};
-		FuzzyProvider[] mid = new FuzzyProvider[] {
-				L_ENG(), AIR, AIR, AIR, L_ENG()
-		};
-		FuzzyProvider[] top = new FuzzyProvider[] {
-				H_ENG(), H_ENG(), H_ENG(), H_ENG(), H_ENG()
-		};
-		for (int i = 0; i < 30; i ++) {
-			if (i >= 11 && i <= 18) {
-				if (i >= 13 && i <=16) {
-					if (i == 14) {
-						result[i] = new FuzzyProvider[][] { bed, mid, top, { AIR, L_ENG(), L_ENG(), L_ENG(), AIR}, { AIR, H_ENG(), AIR, AIR, AIR } };
-					} else {
-						result[i] = new FuzzyProvider[][] { bed, mid, top, { AIR, L_ENG(), L_ENG(), L_ENG(), AIR} };
-					}
-				} else {
-					result[i] = new FuzzyProvider[][] { bed, mid, top };
+public class SmallRailRollerMultiblock extends Multiblock {
+	public static final String NAME = "SMALL_RAIL_MACHINE";
+	private static final Vec3i render = new Vec3i(0,0,0);
+	private static final Vec3i crafter = new Vec3i(0,1,5);
+	private static final Vec3i input = new Vec3i(0,0,0);
+	private static final Vec3i output = new Vec3i(0,0,10);
+	private static final Vec3i power = new Vec3i(0,2,5);
+	private static final Gauge maxGauge = Gauge.from(ConfigBalance.SmallRailRollerMaxGauge);
+
+	public SmallRailRollerMultiblock() {
+		super(NAME, new FuzzyProvider[][][] {
+				{
+						{S_SCAF()}
+				},
+				{
+						{S_SCAF()}
+				},
+				{
+						{S_SCAF()}
+				},
+				{
+						{S_SCAF()}
+				},
+				{
+						{L_ENG()},
+						{H_ENG()},
+						{L_ENG()}
+				},
+				{
+						{L_ENG()},
+						{H_ENG()},
+						{L_ENG()}
+				},
+				{
+						{L_ENG()},
+						{H_ENG()},
+						{L_ENG()}
+				},
+				{
+						{S_SCAF()}
+				},
+				{
+						{S_SCAF()}
+				},
+				{
+						{S_SCAF()}
+				},
+				{
+						{S_SCAF()}
 				}
-			} else {
-				result[i] = new FuzzyProvider[][] { bed };
-			}
-		}
-		
-		return result;
-	}
-
-	public PlateRollerMultiblock() {
-		super(NAME, componentGenerator());
-	}
-
-	public PlateRollerMultiblock(String name, FuzzyProvider[][][] components) {
-		super(name, components);
+		});
 	}
 	
 	@Override
 	public Vec3i placementPos() {
-		return new Vec3i(2, 0, 0);
+		return input;
 	}
 
 	@Override
 	protected MultiblockInstance newInstance(World world, Vec3i origin, Rotation rot) {
-		return new PlateRollerInstance(world, origin, rot);
+		return new SmallRailRollerInstance(world, origin, rot);
 	}
-	public class PlateRollerInstance extends MultiblockInstance {
-
-		public Gauge maxGauge;
-
-		public PlateRollerInstance(World world, Vec3i origin, Rotation rot) {
+	public class SmallRailRollerInstance extends MultiblockInstance {
+		
+		public SmallRailRollerInstance(World world, Vec3i origin, Rotation rot) {
 			super(world, origin, rot);
-			maxGauge = Gauge.from(Double.POSITIVE_INFINITY);
 		}
 
 		@Override
 		public boolean onBlockActivated(Player player, Player.Hand hand, Vec3i offset) {
+			if (world.isClient) {
+				return false;
+			}
 			if (!player.isCrouching()) {
 				ItemStack held = player.getHeldItem(hand);
-				if (held.isEmpty()) {
+				if (held.isEmpty() && outputFull()) {
 					TileMultiblock outputTe = getTile(output);
 					if (outputTe == null) {
 						return false;
 					}
-					
-					if (!outputTe.getContainer().get(0).isEmpty()) {
-						if (world.isServer) {
-							ItemStack outstack = outputTe.getContainer().get(0);
-							world.dropItem(outstack, player.getPosition());
-							outputTe.getContainer().set(0, ItemStack.EMPTY);
-						}
-						return true;
-					}
-				} else if (IRFuzzy.steelBlockOrFallback().matches(held)) {
+
+					ItemStack outstack = outputTe.getContainer().get(0);
+					world.dropItem(outstack, player.getPosition());
+					outputTe.getContainer().set(0, ItemStack.EMPTY);
+				} else if (held.is(IRItems.ITEM_CAST_RAIL) && (new ItemCastRail.Data(held)).gauge.value() <= maxGauge.value()) {
 					TileMultiblock inputTe = getTile(input);
 					if (inputTe == null) {
 						return false;
 					}
 					if (inputTe.getContainer().get(0).isEmpty()) {
-						if (world.isServer) {
-							ItemStack inputStack = held.copy();
-							inputStack.setCount(1);
-							inputTe.getContainer().set(0, inputStack);
-							held.shrink(1);
-							player.setHeldItem(hand, held);
-						}
+						ItemStack inputStack = held.copy();
+						inputStack.setCount(1);
+						inputTe.getContainer().set(0, inputStack);
+						held.shrink(1);
+						player.setHeldItem(hand, held);
 					}
-					return true;
 				}
-				
-				if (world.isClient) {
-					Vec3i pos = getPos(crafter);
-					GuiTypes.PLATE_ROLLER.open(player, pos);
-				}
-				return true;
 			}
 			return false;
 		}
@@ -177,7 +170,7 @@ public class PlateRollerMultiblock extends Multiblock {
 				energy.extract(powerRequired(), false);
 				craftingTe.setCraftProgress(Math.max(0, craftingTe.getCraftProgress() - 1));
 			}
-
+			
 			float progress = craftingTe.getCraftProgress();
 			
 			ItemStack input = inputTe.getContainer().get(0);
@@ -186,9 +179,7 @@ public class PlateRollerMultiblock extends Multiblock {
 			
 			if (progress == 0) {
 				// Try to start crafting
-				if (IRFuzzy.steelBlockOrFallback().matches(input) && output.isEmpty() && !craftingTe.getCraftItem().isEmpty()) {
-					input.setCount(input.getCount() - 1);
-					inputTe.getContainer().set(0, input);;
+				if (input.is(IRItems.ITEM_CAST_RAIL) && output.isEmpty() && (new ItemCastRail.Data(input)).gauge.value() <= maxGauge.value()) {
 					progress = 100;
 					craftingTe.setCraftProgress(100);
 				}
@@ -196,13 +187,19 @@ public class PlateRollerMultiblock extends Multiblock {
 			
 			if (progress == 1) {
 				// Stop crafting
-				outputTe.getContainer().set(0, craftingTe.getCraftItem().copy());
+				ItemStack out = new ItemStack(IRItems.ITEM_RAIL, 12);
+				ItemRail.Data data = new ItemRail.Data(out);
+				data.gauge = new ItemCastRail.Data(input).gauge;
+				data.write();
+				outputTe.getContainer().set(0, out);
+				input.shrink(1);
+				inputTe.getContainer().set(0, input);
 			}
 		}
 
 		@Override
 		public boolean canInsertItem(Vec3i offset, int slot, ItemStack stack) {
-			return offset.equals(input) && IRFuzzy.steelBlockOrFallback().matches(stack);
+			return offset.equals(input) && stack.is(IRItems.ITEM_CAST_RAIL) && (new ItemCastRail.Data(stack)).gauge.value() <= maxGauge.value();
 		}
 
 		@Override
@@ -226,9 +223,26 @@ public class PlateRollerMultiblock extends Multiblock {
 				return false;
 			}
 			return powerTe.getEnergy(null).getCurrent() >= powerRequired();
+
 		}
 		private int powerRequired() {
-			return (int) Math.ceil(32 * Config.ConfigBalance.machinePowerFactor);
+			return (int) Math.ceil(32 * ConfigBalance.machinePowerFactor);
+		}
+
+		public int getCraftProgress() {
+			TileMultiblock craftingTe = getTile(crafter);
+			if (craftingTe == null) {
+				return 0;
+			}
+			return craftingTe.getCraftProgress();
+		}
+
+		public boolean outputFull() {
+			TileMultiblock outputTe = getTile(output);
+			if (outputTe == null) {
+				return false;
+			}
+			return !outputTe.getContainer().get(0).isEmpty();
 		}
 	}
 }

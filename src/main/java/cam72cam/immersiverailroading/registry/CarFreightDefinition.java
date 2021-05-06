@@ -1,5 +1,6 @@
 package cam72cam.immersiverailroading.registry;
 
+import cam72cam.immersiverailroading.Config;
 import cam72cam.immersiverailroading.entity.CarFreight;
 import cam72cam.immersiverailroading.library.Gauge;
 import cam72cam.immersiverailroading.library.GuiText;
@@ -43,12 +44,28 @@ public class CarFreightDefinition extends FreightDefinition {
         return tips;
     }
 
+    private int[] calcNewSlots(Gauge gauge) {
+        int slots = (int) Math.ceil(numSlots * gauge.scale() * Config.ConfigBalance.freightMultiplier);
+        if (slots < width) { return new int[] {slots, slots}; }
+        int newSlots = 0;
+        int newWidth = width;
+        for (int i : new int[] {6, 8, 9, 10, 12, width}) {
+            int mul = slots + i / 2;
+            mul -= mul % i;
+            if (Math.abs(slots - mul) <= Math.abs(slots - newSlots)) {
+                newSlots = mul;
+                newWidth = i;
+            }
+        }
+        return new int[]{newSlots, newWidth};
+    }
+
     public int getInventorySize(Gauge gauge) {
-        return (int) Math.ceil(numSlots * gauge.scale());
+        return calcNewSlots(gauge)[0];
     }
 
     public int getInventoryWidth(Gauge gauge) {
-        return (int) Math.ceil(width * gauge.scale());
+        return calcNewSlots(gauge)[1];
     }
 
     @Override
