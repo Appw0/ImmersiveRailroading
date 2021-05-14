@@ -20,8 +20,6 @@ import cam72cam.mod.gui.screen.IScreenBuilder;
 import cam72cam.mod.item.ItemStack;
 import cam72cam.mod.resource.Identifier;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,7 +30,6 @@ public class CastingGUI implements IScreen {
     
 	private Button gaugeButton;
 	private Gauge gauge;
-	private Gauge maxGauge;
 
 	private Button pickerButton;
 
@@ -45,13 +42,8 @@ public class CastingGUI implements IScreen {
 	public CastingGUI(TileMultiblock te) {
 		this.tile = te;
 		currentItem = ((CastingInstance) te.getMultiblock()).getCraftItem();
-		maxGauge = ((CastingInstance) te.getMultiblock()).maxGauge;
-
-
+		
 		gauge = new ItemRollingStockComponent.Data(currentItem).gauge;
-		if (gauge.value() > maxGauge.value()) {
-			gauge = maxGauge;
-		}
 	}
 	
 	private void updatePickerButton() {
@@ -67,20 +59,12 @@ public class CastingGUI implements IScreen {
 		pickerButton = new Button(screen, -100, -20 - 10, GuiText.SELECTOR_TYPE.toString("")) {
 			@Override
 			public void onClick(Player.Hand hand) {
-				CraftPicker.showCraftPicker(screen, currentItem, CraftingType.CASTING, maxGauge, (ItemStack item) -> {
+				CraftPicker.showCraftPicker(screen, currentItem, CraftingType.CASTING, (ItemStack item) -> {
 					if (item != null) {
 						currentItem = item;
 						EntityRollingStockDefinition def = new ItemRollingStockComponent.Data(currentItem).def;
 						if (def != null && !gauge.isModel() && gauge.value() != def.recommended_gauge.value()) {
 							gauge = def.recommended_gauge;
-							if (gauge.value() > maxGauge.value() && ConfigBalance.DesignGaugeLock) {
-								for (Gauge ga : Gauge.values()) {
-									if (ga.isModel()) {
-										gauge = ga;
-										break;
-									}
-								}
-							}
 							gaugeButton.setText(GuiText.SELECTOR_GAUGE.toString(gauge));
 						}
 						updatePickerButton();
@@ -96,25 +80,11 @@ public class CastingGUI implements IScreen {
 			public void onClick(Player.Hand hand) {
 				if(!currentItem.isEmpty()) {
 					EntityRollingStockDefinition def = new ItemRollingStockComponent.Data(currentItem).def;
-					ArrayList<Gauge> validGauges = new ArrayList<>();
 					if (def != null && ConfigBalance.DesignGaugeLock) {
-						for (Gauge ga : Gauge.values()) {
-							if (ga.value() <= maxGauge.value()) {
-								if (ga.isModel()) {
-									validGauges.add(ga);
-								} else if (ga == def.recommended_gauge) {
-									validGauges.add(ga);
-								}
-							}
-						}
+						List<Gauge> validGauges = Collections.singletonList(Gauge.from(def.recommended_gauge.value()));
 						gauge = next(validGauges, gauge, hand);
 					} else {
-						for (Gauge ga : Gauge.values()) {
-							if (ga.value() <= maxGauge.value()) {
-								validGauges.add(ga);
-							}
-						}
-						gauge = next(validGauges, gauge, hand);
+						gauge = next(Gauge.values(), gauge, hand);
 					}
 				}
 				gaugeButton.setText(GuiText.SELECTOR_GAUGE.toString(gauge));
@@ -174,7 +144,7 @@ public class CastingGUI implements IScreen {
 		builder.drawTank(- 95, 3, 57, 60, Fluid.LAVA, (float) fluidPercent, false, 0x99fb7e15);
 		builder.drawTank(- 29, 67, 126, 30, Fluid.LAVA, progress/cost, false, 0x998c1919);
 		
-		String fillStr = String.format("%s/%s", (int)(fluidPercent * ((CastingInstance) tile.getMultiblock()).maxVolume), (int)((CastingInstance) tile.getMultiblock()).maxVolume);
+		String fillStr = String.format("%s/%s", (int)(fluidPercent * CastingMultiblock.max_volume), (int)CastingMultiblock.max_volume);
 		String castStr = String.format("%s/%s", progress, (int)cost);
 		builder.drawCenteredString(fillStr, - 94 + 27, 3 + 25, 14737632);
 		builder.drawCenteredString(castStr, - 28 + 60, 67 + 10, 14737632);

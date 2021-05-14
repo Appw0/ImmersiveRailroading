@@ -52,8 +52,8 @@ public class PhysicsAccummulator {
 			brakeAdhesionNewtons += loco.getDefinition().getStartingTractionNewtons(stock.gauge); 
 		} else {
 			// Air brake only applies 1/4th
-			// 0.25 = steel wheel on steel rail
-			brakeAdhesionNewtons += stock.getDefinition().getBrakingForceNewtons(stock.gauge) * 0.25 * 0.25;
+			// 0.25 = steel wheel on steel rail	
+			brakeAdhesionNewtons += stock.getWeight() * 0.25 * 0.25 * 4.44822f;
 		}
 		
 		int slowdown = movable.getSpeedRetarderSlowdown(pos);

@@ -106,11 +106,9 @@ public abstract class Freight extends EntityCoupleableRollingStock {
 			}
 		}
 		
-		if (guiType() != null && player.getHeldItem(Player.Hand.PRIMARY).isEmpty() && player.getHeldItem(Player.Hand.SECONDARY).isEmpty()) {
+		if (guiType() != null) {
 			guiType().open(player, this);
 			return ClickResult.ACCEPTED;
-		} else if (!player.getHeldItem(Player.Hand.PRIMARY).isEmpty()) {
-			player.getHeldItem(Player.Hand.PRIMARY).use(player.getWorld(), player, Player.Hand.PRIMARY);
 		}
 		return ClickResult.PASS;
 	}

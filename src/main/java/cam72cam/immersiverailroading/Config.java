@@ -98,9 +98,6 @@ public class Config {
 		@Comment( "MilliBuckets per Liter" )
 		public static int MB_PER_LITER = 1;
 
-		@Comment("Scale the amount of slots in freight cars. This is on top of the gauge scaling")
-		public static double freightMultiplier = 1.0;
-
 		@Comment("Cost to place down a tie")
 		public static double TieCostMultiplier = 0.25;
 
@@ -169,15 +166,6 @@ public class Config {
 		
 		@Comment("Prevent stock from being built outside the recommended and model gauges")
 		public static boolean DesignGaugeLock = false;
-
-		@Comment("Maximum gauge that the Small Casting Basin can process")
-		public static double SmallCastingMaxGauge = 0.632;
-
-		@Comment("Maximum gauge that the Small Railer Roller can process")
-		public static double SmallRailRollerMaxGauge = 0.632;
-
-		@Comment("Maximum gauge that the Small Plate Roller can process")
-		public static double SmallPlateRollerMaxGauge = 0.632;
 
 		@Comment("Angle Placement Segmentation")
 		public static int AnglePlacementSegmentation = 4;

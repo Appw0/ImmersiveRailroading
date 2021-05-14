@@ -12,8 +12,6 @@ import cam72cam.immersiverailroading.gui.TrackGui;
 import cam72cam.immersiverailroading.gui.container.*;
 import cam72cam.immersiverailroading.multiblock.CastingMultiblock;
 import cam72cam.immersiverailroading.multiblock.PlateRollerMultiblock;
-import cam72cam.immersiverailroading.multiblock.SmallCastingMultiblock;
-import cam72cam.immersiverailroading.multiblock.SmallPlateRollerMultiblock;
 import cam72cam.immersiverailroading.tile.TileMultiblock;
 import cam72cam.immersiverailroading.tile.TileRailPreview;
 import cam72cam.mod.config.ConfigGui;
@@ -42,10 +40,10 @@ public class GuiTypes {
         if (!mb.isLoaded()) {
             return null;
         }
-        if (mb.getName().equals(CastingMultiblock.NAME) || mb.getName().equals(SmallCastingMultiblock.NAME)) {
+        if (mb.getName().equals(CastingMultiblock.NAME)) {
             return new CastingGUI(mb);
         }
-        if (mb.getName().equals(PlateRollerMultiblock.NAME) || mb.getName().equals(SmallPlateRollerMultiblock.NAME)) {
+        if (mb.getName().equals(PlateRollerMultiblock.NAME)) {
             return new PlateRollerGUI(mb);
         }
         return null;

@@ -1,7 +1,6 @@
 package cam72cam.immersiverailroading.multiblock;
 
 import cam72cam.immersiverailroading.Config;
-import cam72cam.immersiverailroading.library.Gauge;
 import cam72cam.immersiverailroading.library.GuiTypes;
 import cam72cam.immersiverailroading.tile.TileMultiblock;
 import cam72cam.immersiverailroading.util.IRFuzzy;
@@ -58,10 +57,6 @@ public class PlateRollerMultiblock extends Multiblock {
 	public PlateRollerMultiblock() {
 		super(NAME, componentGenerator());
 	}
-
-	public PlateRollerMultiblock(String name, FuzzyProvider[][][] components) {
-		super(name, components);
-	}
 	
 	@Override
 	public Vec3i placementPos() {
@@ -73,12 +68,9 @@ public class PlateRollerMultiblock extends Multiblock {
 		return new PlateRollerInstance(world, origin, rot);
 	}
 	public class PlateRollerInstance extends MultiblockInstance {
-
-		public Gauge maxGauge;
-
+		
 		public PlateRollerInstance(World world, Vec3i origin, Rotation rot) {
 			super(world, origin, rot);
-			maxGauge = Gauge.from(Double.POSITIVE_INFINITY);
 		}
 
 		@Override
